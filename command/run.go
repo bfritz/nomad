@@ -132,24 +132,21 @@ func (c *RunCommand) Run(args []string) int {
 	}
 
 	// Get Job struct from Jobfile
-	job, err := c.JobGetter.StructJob(args[0])
+	job, err := c.JobGetter.ApiJob(args[0])
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error getting job struct: %s", err))
-		return 1
-	}
-
-	// Initialize any fields that need to be.
-	job.Canonicalize()
-
-	// Check that the job is valid
-	if err := job.Validate(); err != nil {
-		c.Ui.Error(fmt.Sprintf("Error validating job: %v", err))
 		return 1
 	}
 
 	// Check if the job is periodic or is a parameterized job
 	periodic := job.IsPeriodic()
 	paramjob := job.IsParameterized()
+
+	// Initialize any fields that need to be.
+	// TODO Initialize the job
+
+	// Check that the job is valid
+	// TODO Validate the Job via the Nomad API
 
 	// Parse the Vault token
 	if vaultToken == "" {
@@ -161,17 +158,10 @@ func (c *RunCommand) Run(args []string) int {
 		job.VaultToken = vaultToken
 	}
 
-	// Convert it to something we can use
-	apiJob, err := convertStructJob(job)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error converting job: %s", err))
-		return 1
-	}
-
 	// COMPAT 0.4.1 -> 0.5 Remove in 0.6
-	if apiJob.TaskGroups != nil {
+	if job.TaskGroups != nil {
 	OUTSIDE:
-		for _, tg := range apiJob.TaskGroups {
+		for _, tg := range job.TaskGroups {
 			if tg.Tasks != nil {
 				for _, task := range tg.Tasks {
 					if task.Resources != nil {
@@ -186,7 +176,7 @@ func (c *RunCommand) Run(args []string) int {
 	}
 
 	if output {
-		req := api.RegisterJobRequest{Job: apiJob}
+		req := api.RegisterJobRequest{Job: job}
 		buf, err := json.MarshalIndent(req, "", "    ")
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error converting job: %s", err))
@@ -219,9 +209,9 @@ func (c *RunCommand) Run(args []string) int {
 	// Submit the job
 	var evalID string
 	if enforce {
-		evalID, _, err = client.Jobs().EnforceRegister(apiJob, checkIndex, nil)
+		evalID, _, err = client.Jobs().EnforceRegister(job, checkIndex, nil)
 	} else {
-		evalID, _, err = client.Jobs().Register(apiJob, nil)
+		evalID, _, err = client.Jobs().Register(job, nil)
 	}
 	if err != nil {
 		if strings.Contains(err.Error(), api.RegisterEnforceIndexErrPrefix) {
@@ -240,11 +230,13 @@ func (c *RunCommand) Run(args []string) int {
 	}
 
 	// Check if we should enter monitor mode
-	if detach || periodic || paramjob {
+	if detach || job.Periodic != nil || job.ParameterizedJob != nil {
 		c.Ui.Output("Job registration successful")
 		if periodic {
 			now := time.Now().UTC()
-			next := job.Periodic.Next(now)
+			// TODO Make this an API
+			// next := job.Periodic.Next(now)
+			next := time.Now()
 			c.Ui.Output(fmt.Sprintf("Approximate next launch time: %s (%s from now)",
 				formatTime(next), formatTimeDifference(now, next, time.Second)))
 		} else if !paramjob {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/nomad/api"
-	"github.com/hashicorp/nomad/nomad/structs"
 	"github.com/hashicorp/nomad/scheduler"
 	"github.com/mitchellh/colorstring"
 )
@@ -99,27 +98,22 @@ func (c *PlanCommand) Run(args []string) int {
 
 	path := args[0]
 	// Get Job struct from Jobfile
-	job, err := c.JobGetter.StructJob(args[0])
+	job, err := c.JobGetter.ApiJob(args[0])
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error getting job struct: %s", err))
 		return 255
 	}
 
 	// Initialize any fields that need to be.
-	job.Canonicalize()
+	// TODO Do something about this
+	// job.Canonicalize()
 
 	// Check that the job is valid
-	if err := job.Validate(); err != nil {
-		c.Ui.Error(fmt.Sprintf("Error validating job: %s", err))
-		return 255
-	}
-
-	// Convert it to something we can use
-	apiJob, err := convertStructJob(job)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error converting job: %s", err))
-		return 255
-	}
+	// TODO Call the validate API
+	// if err := job.Validate(); err != nil {
+	// 	c.Ui.Error(fmt.Sprintf("Error validating job: %s", err))
+	// 	return 255
+	// }
 
 	// Get the HTTP client
 	client, err := c.Meta.Client()
@@ -134,7 +128,7 @@ func (c *PlanCommand) Run(args []string) int {
 	}
 
 	// Submit the job
-	resp, _, err := client.Jobs().Plan(apiJob, diff, nil)
+	resp, _, err := client.Jobs().Plan(job, diff, nil)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error during plan: %s", err))
 		return 255
@@ -179,7 +173,7 @@ func formatJobModifyIndex(jobModifyIndex uint64, jobName string) string {
 }
 
 // formatDryRun produces a string explaining the results of the dry run.
-func formatDryRun(resp *api.JobPlanResponse, job *structs.Job) string {
+func formatDryRun(resp *api.JobPlanResponse, job *api.Job) string {
 	var rolling *api.Evaluation
 	for _, eval := range resp.CreatedEvals {
 		if eval.TriggeredBy == "rolling-update" {

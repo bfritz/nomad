@@ -245,6 +245,16 @@ type Job struct {
 	JobModifyIndex    uint64
 }
 
+// IsPeriodic returns whether a job is periodic.
+func (j *Job) IsPeriodic() bool {
+	return j.Periodic != nil
+}
+
+// IsParameterized returns whether a job is parameterized job.
+func (j *Job) IsParameterized() bool {
+	return j.ParameterizedJob != nil
+}
+
 // JobSummary summarizes the state of the allocations of a job
 type JobSummary struct {
 	JobID    string
