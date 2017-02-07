@@ -9,10 +9,20 @@ $script = <<SCRIPT
 GO_VERSION="1.7.5"
 INSTALL="sudo pacman -S --noconfirm --needed"
 
+
+# Enable multilib repo for i386 compilation
+(grep -q '^\[multilib\]' /etc/pacman.conf 2> /dev/null) \
+  || (echo "\n\n[multilib]\nInclude = /etc/pacman.d/mirrorlist" | sudo tee -a /etc/pacman.conf)
+
 sudo pacman -Sy --noconfirm
+
 
 # Install base dependencies
 $INSTALL base-devel git go lxc tree wget zip
+
+# Install multilib-devel for i386 compilation.  `echo`s to respond to pacman prompts.
+(pacman -Qq multilib-devel 2> /dev/null) \
+  || (echo -n "\ny\ny\ny\n" | sudo pacman -S multilib-devel)
 
 # Setup go, for development of Nomad
 SRCROOT="/opt/go"
