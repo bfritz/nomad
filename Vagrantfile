@@ -7,20 +7,12 @@ VAGRANTFILE_API_VERSION = "2"
 DEFAULT_CPU_COUNT = 2
 $script = <<SCRIPT
 GO_VERSION="1.7.5"
+INSTALL="sudo pacman -S --noconfirm --needed"
 
-export DEBIAN_FRONTEND=noninteractive
-
-sudo dpkg --add-architecture i386
-sudo apt-get update
+sudo pacman -Sy --noconfirm
 
 # Install base dependencies
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential curl git-core mercurial bzr \
-     libpcre3-dev pkg-config zip default-jre qemu silversearcher-ag \
-     jq htop vim unzip tree                             \
-     liblxc1 lxc-dev lxc-templates                      \
-     gcc-5-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-     libc6-dev-i386 linux-libc-dev:i386                 \
-     gcc-5-arm-linux-gnueabi gcc-5-multilib-arm-linux-gnueabi binutils-arm-linux-gnueabi
+$INSTALL base-devel git go lxc tree wget zip
 
 # Setup go, for development of Nomad
 SRCROOT="/opt/go"
@@ -50,7 +42,6 @@ sudo chown -R vagrant:vagrant $SRCPATH 2>/dev/null || true
 
 cat <<EOF >/tmp/gopath.sh
 export GOPATH="$SRCPATH"
-export GOROOT="$SRCROOT"
 export PATH="$SRCROOT/bin:$SRCPATH/bin:\$PATH"
 EOF
 sudo mv /tmp/gopath.sh /etc/profile.d/gopath.sh
@@ -58,17 +49,10 @@ sudo chmod 0755 /etc/profile.d/gopath.sh
 source /etc/profile.d/gopath.sh
 
 # Install Docker
-if [[ -f /etc/apt/sources.list.d/docker.list ]]; then
-    echo "Docker repository already installed; Skipping"
-else
-    echo deb https://apt.dockerproject.org/repo ubuntu-`lsb_release -c | awk '{print $2}'` main | sudo tee /etc/apt/sources.list.d/docker.list
-    sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-    sudo apt-get update
-fi
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker-engine
+$INSTALL docker
 
-# Restart docker to make sure we get the latest version of the daemon if there is an upgrade
-sudo service docker restart
+# Start docker
+sudo systemctl start docker
 
 # Make sure we can actually use docker as the vagrant user
 sudo usermod -aG docker vagrant
@@ -77,16 +61,17 @@ sudo usermod -aG docker vagrant
 cd /opt/gopath/src/github.com/hashicorp/nomad && make bootstrap
 
 # Install rkt, consul and vault
-bash scripts/install_rkt.sh
-bash scripts/install_rkt_vagrant.sh
-bash scripts/install_consul.sh
-bash scripts/install_vault.sh
+#bash scripts/install_rkt.sh
+#bash scripts/install_rkt_vagrant.sh
+#bash scripts/install_consul.sh
+#bash scripts/install_vault.sh
 
 # Set hostname's IP to made advertisement Just Work
 sudo sed -i -e "s/.*nomad.*/$(ip route get 1 | awk '{print $NF;exit}') $(hostname)/" /etc/hosts
 
 # CD into the nomad working directory when we login to the VM
-grep "cd /opt/gopath/src/github.com/hashicorp/nomad" ~/.profile || echo "cd /opt/gopath/src/github.com/hashicorp/nomad" >> ~/.profile
+PROFILE=$HOME/.bash_profile
+(grep "cd /opt/gopath/src/github.com/hashicorp/nomad" $PROFILE 2> /dev/null) || echo "cd /opt/gopath/src/github.com/hashicorp/nomad" >> $PROFILE
 SCRIPT
 
 def configureVM(vmCfg, vmParams={
@@ -94,7 +79,7 @@ def configureVM(vmCfg, vmParams={
                 }
                )
   # When updating make sure to use a box that supports VMWare and VirtualBox
-  vmCfg.vm.box = "bento/ubuntu-16.04" # 16.04 LTS
+  vmCfg.vm.box = "wholebits/arch-64" # Arch Linux
 
   vmCfg.vm.provision "shell", inline: $script, privileged: false
   vmCfg.vm.synced_folder '.', '/opt/gopath/src/github.com/hashicorp/nomad'
