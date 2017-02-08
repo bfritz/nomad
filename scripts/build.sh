@@ -23,6 +23,8 @@ rm -rf pkg/*
 mkdir -p bin/
 
 if [[ $(uname) == "Linux" ]]; then
+    BASEPATH=$PATH
+
     echo "==> Building linux 386..."
     CGO_ENABLED=1 GOARCH="386"   GOOS="linux"   go build -ldflags "-X $LDFLAG" -o "pkg/linux_386/nomad"
 
@@ -33,7 +35,8 @@ if [[ $(uname) == "Linux" ]]; then
     CGO_ENBALED=1 GOARCH="amd64" GOOS="linux"   go build -ldflags "-X $LDFLAG" -o "pkg/linux_amd64-lxc/nomad" -tags "lxc"
 
     echo "==> Building linux arm..."
-    CC="arm-linux-gnueabi-gcc-5" GOOS=linux GOARCH="arm"   CGO_ENABLED=1 go build -ldflags "-X $LDFLAG" -o "pkg/linux_arm/nomad"
+    PATH=$BASEPATH:/usr/x-tools/x-tools7h/arm-unknown-linux-gnueabihf/bin
+    CC="armv7l-unknown-linux-gnueabihf-gcc" GOOS=linux GOARCH="arm"   CGO_ENABLED=1 go build -ldflags "-X $LDFLAG" -o "pkg/linux_arm/nomad"
 
     echo "==> Building linux arm64..."
     CC="aarch64-linux-gnu-gcc-5"  GOOS=linux GOARCH="arm64" CGO_ENABLED=1 go build -ldflags "-X $LDFLAG" -o "pkg/linux_arm64/nomad"

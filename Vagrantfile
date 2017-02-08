@@ -24,6 +24,17 @@ $INSTALL base-devel git go lxc tree wget zip
 (pacman -Qq multilib-devel 2> /dev/null) \
   || (echo -n "\ny\ny\ny\n" | sudo pacman -S multilib-devel)
 
+# Install cross compilers
+for p in x-tools-armv7-bin; do
+    (pacman -Qq $p 2> /dev/null) \
+      || (
+      echo "Installing $p package."
+      curl https://aur.archlinux.org/cgit/aur.git/snapshot/$p.tar.gz | bsdtar -C /tmp -xf -
+      cd /tmp/$p
+      makepkg -si --noconfirm
+    )
+done
+
 # Setup go, for development of Nomad
 SRCROOT="/opt/go"
 SRCPATH="/opt/gopath"
