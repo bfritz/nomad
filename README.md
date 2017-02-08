@@ -1,3 +1,10 @@
+To build binaries for ARM on Arch Linux, use:
+
+    vagrant up
+    vagrant ssh -c "make release"
+
+-- -- --
+
 Nomad [![Build Status](https://travis-ci.org/hashicorp/nomad.svg)](https://travis-ci.org/hashicorp/nomad) [![Join the chat at https://gitter.im/hashicorp-nomad/Lobby](https://badges.gitter.im/hashicorp-nomad/Lobby.svg)](https://gitter.im/hashicorp-nomad/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 =========
 -	Website: https://www.nomadproject.io
