@@ -25,7 +25,7 @@ $INSTALL base-devel git go lxc tree wget zip
   || (echo -n "\ny\ny\ny\n" | sudo pacman -S multilib-devel)
 
 # Install cross compilers
-for p in x-tools-armv7-bin; do
+for p in x-tools-armv7-bin x-tools-armv8-bin; do
     (pacman -Qq $p 2> /dev/null) \
       || (
       echo "Installing $p package."
