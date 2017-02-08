@@ -38,9 +38,9 @@ if [[ $(uname) == "Linux" ]]; then
     PATH=$BASEPATH:/usr/x-tools/x-tools7h/arm-unknown-linux-gnueabihf/bin
     CC="armv7l-unknown-linux-gnueabihf-gcc" GOOS=linux GOARCH="arm"   CGO_ENABLED=1 go build -ldflags "-X $LDFLAG" -o "pkg/linux_arm/nomad"
 
-    echo "==> Building linux arm64..."
-    PATH=$BASEPATH:/usr/x-tools/x-tools8/aarch64-unknown-linux-gnueabi/bin
-    CC="aarch64-unknown-linux-gnueabi-gcc"  GOOS=linux GOARCH="arm64" CGO_ENABLED=1 go build -ldflags "-X $LDFLAG" -o "pkg/linux_arm64/nomad"
+#    echo "==> Building linux arm64..."
+#    PATH=$BASEPATH:/usr/x-tools/x-tools8/aarch64-unknown-linux-gnueabi/bin
+#    CC="aarch64-unknown-linux-gnueabi-gcc"  GOOS=linux GOARCH="arm64" CGO_ENABLED=1 go build -ldflags "-X $LDFLAG" -o "pkg/linux_arm64/nomad"
 
     echo "==> Building windows 386..."
     CGO_ENABLED=1 GOARCH="386"   GOOS="windows" go build -ldflags "-X $LDFLAG" -o "pkg/windows_386/nomad.exe"
